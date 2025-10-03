@@ -6,14 +6,7 @@
 <body>
   <h2>Send Message to Discord</h2>
   <form id="discordForm">
-    <label for="channelSelect">Choose Channel:</label>
-    <select id="channelSelect" required>
-      <option value="" disabled selected>Select a channel</option>
-      <option value="gamerfest">Gamerfest</option>
-      <option value="announcement">Announcement</option>
-    </select><br><br>
-
-    <input type="password" id="password" placeholder="Enter Password" required><br><br>
+    <input type="password" id="password" placeholder="Enter Channel Password (discord/game)" required><br><br>
     
     <input type="text" id="username" placeholder="Your Name" required><br><br>
     <textarea id="message" placeholder="Your Message" required></textarea><br><br>
@@ -21,37 +14,36 @@
   </form>
 
   <script>
-    // ** SECURITY NOTE: The password and webhooks are exposed in this client-side code. **
-    const CORRECT_PASSWORD = "secure123"; // CHANGE THIS TO YOUR DESIRED PASSWORD
-
-    // Webhook URLs mapped to their option values
-    const WEBHOOKS = {
-      "gamerfest": "https://discord.com/api/webhooks/1423495074796535908/JBoVezEtQybpYu3lSfVVwVX174CAvOaeOLzQbmM6zC7P11EBy3QRnZPdscqBYpASqufF",
-      "announcement": "https://discord.com/api/webhooks/1423498115180400722/8qWysEc0A12rmf3856Hlfd6201O8vL-AEjSzmJ3IFrwWZIfrHUDCq979tLUs_gYTJN32"
+    // ** SECURITY NOTE: The passwords and webhooks are exposed in this client-side code. **
+    
+    // Webhook URLs mapped to their required passwords
+    const PASSWORD_TO_CHANNEL = {
+      "discord": {
+        name: "Announcement",
+        url: "https://discord.com/api/webhooks/1423498115180400722/8qWysEc0A12rmf3856Hlfd6201O8vL-AEjSzmJ3IFrwWZIfrHUDCq979tLUs_gYTJN32"
+      },
+      "game": {
+        name: "Gamerfest",
+        url: "https://discord.com/api/webhooks/1423495074796535908/JBoVezEtQybpYu3lSfVVwVX174CAeOLzQbmM6zC7P11EBy3QRnZPdscqBYpASqufF"
+      }
     };
 
     document.getElementById("discordForm").addEventListener("submit", function(e) {
       e.preventDefault();
 
-      const selectedChannel = document.getElementById("channelSelect").value;
       const enteredPassword = document.getElementById("password").value;
+      const channelInfo = PASSWORD_TO_CHANNEL[enteredPassword];
 
-      // 1. Password Check
-      if (enteredPassword !== CORRECT_PASSWORD) {
-        alert("Incorrect password. Message not sent.");
-        return;
+      // 1. Password/Channel Check
+      if (!channelInfo) {
+        alert("Incorrect password or unknown channel password. Message not sent.");
+        return; // Stop the function if the password is wrong
       }
       
-      // 2. Channel Selection Check
-      if (!selectedChannel) {
-          alert("Please select a channel before sending the message.");
-          return;
-      }
+      const webhookURL = channelInfo.url;
+      const channelName = channelInfo.name;
 
-      // Determine the correct webhook URL
-      const webhookURL = WEBHOOKS[selectedChannel];
-      
-      // If the password and channel are correct, proceed with sending the message
+      // If the password is correct, proceed with sending the message
       const username = document.getElementById("username").value;
       const message = document.getElementById("message").value;
 
@@ -67,14 +59,14 @@
       })
       .then(response => {
         if(response.ok){
-          alert(`Message sent to ${selectedChannel.toUpperCase()} on Discord!`);
+          alert(`Message sent to ${channelName} on Discord!`);
           document.getElementById("discordForm").reset();
         } else {
-          // If Discord returns an error, try to show more info
+          // Attempt to show a more descriptive error from Discord's API
           response.json().then(data => {
             alert(`Error sending message: ${data.message || response.statusText}`);
           }).catch(() => {
-            alert("Error sending message. Check the webhook URL.");
+            alert("Error sending message. Please check the webhook URL.");
           });
         }
       })
